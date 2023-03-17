@@ -17,7 +17,7 @@ import logging
 import traceback
 
 #local imports
-from LAS import Las
+from lasreader import Read
 
 class MainWindow:
 	def __init__(self):
@@ -38,7 +38,7 @@ class MainWindow:
 
 			err_label = Label(err_frame, text=err, bg="white", relief=SUNKEN, bd=0, height=5)
 			err_label.pack(side=TOP, fill=BOTH, expand=True)
-#
+
 			btn_frame = Frame(err_frame, relief=SUNKEN, bd=0)
 			btn_frame.pack(side=TOP, fill=BOTH, expand=True)
 
@@ -63,7 +63,7 @@ class MainWindow:
 				self.tool_bar.pack_forget()
 	
 				for file in self.files:
-					points = Las(file).points
+					points = Read(file).points
 					self.points_list.append(points)
 	
 				# the figure that will contain the plot
@@ -452,54 +452,6 @@ class MainWindow:
 		self.eps_entry_two.grid(column=9, row=1, padx=2, pady=2, sticky=NS)
 		self.min_label_two.grid(column=10, row=1, padx=2, pady=2, sticky=NS)
 		self.min_entry_two.grid(column=11, row=1, padx=2, pady=2, sticky=NS)
-	
-
-
-
-#
-#	files = fd.askopenfilenames()
-#
-#	points_list = []
-#
-#	canvas.get_tk_widget().pack_forget() 
-#	tool_bar.pack_forget()
-#
-#	for file in files:
-#		points = Las(file).points
-#		points_list.append(points)
-#
-#	# the figure that will contain the plot
-#	fig = Figure(figsize = (5, 5), dpi = 100)
-#
-#	# adding the subplot
-#	plot1 = fig.add_subplot(111)
-#
-#	# creating the Tkinter canvas
-#	# containing the Matplotlib figure
-#	canvas = FigureCanvasTkAgg(fig, master = window)
-#	canvas.draw()
-#
-#	# placing the canvas on the Tkinter window
-#	canvas.get_tk_widget().pack(fill=BOTH, expand=True)
-#
-#	# creating the Matplotlib toolbar
-#	tool_bar = NavigationToolbar2Tk(canvas, window, pack_toolbar=False)
-#	tool_bar.update()
-#	tool_bar.pack(side=BOTTOM, fill=X)
-#
-#	canvas.get_tk_widget().pack_forget() 
-#	tool_bar.pack_forget()
-#	canvas.get_tk_widget().pack(fill=BOTH, expand=True)
-#	tool_bar.pack(side=BOTTOM, fill=X)
-#
-#	for points in points_list:
-#		plot1.plot(points[:, 0], points[:, 1], '.')	
-#
-#	return points_list
-#
-#def draw_poly():
-#	print(points_list)
-#
 
 if __name__ == '__main__':
 	app = MainWindow().window	
