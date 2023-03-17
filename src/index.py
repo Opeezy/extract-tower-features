@@ -55,17 +55,11 @@ class MainWindow:
 			self.min_label.pack(fill=X, expand=True, side=LEFT)
 			self.min_entry.pack(fill=X, expand=True, side=LEFT)
 
-		def load_points():
+		def refresh_plot():
 			try:
-				self.files = fd.askopenfilenames()
-	
 				self.canvas.get_tk_widget().pack_forget() 
-				self.tool_bar.pack_forget()
-	
-				for file in self.files:
-					points = Read(file).points
-					self.points_list.append(points)
-	
+				self.tool_bar.pack_forget()		
+
 				# the figure that will contain the plot
 				self.fig = Figure(figsize = (5, 5), dpi = 100)
 	
@@ -85,7 +79,20 @@ class MainWindow:
 				self.tool_bar = NavigationToolbar2Tk(self.canvas, self.window, pack_toolbar=False)
 				self.tool_bar.update()
 				self.tool_bar.pack(side=BOTTOM, fill=X)
+				
+			except Exception as e:
+				err_win(e)
+
+		def load_points():
+			try:
+				self.files = fd.askopenfilenames()
 	
+				for file in self.files:
+					points = Read(file).points
+					self.points_list.append(points)
+
+				refresh_plot()	
+
 				for points in self.points_list:
 					self.plot1.plot(points[:, 0], points[:, 1], '.')
 
@@ -98,27 +105,7 @@ class MainWindow:
 				self.clusters = []
 				self.tops = []
 
-				self.canvas.get_tk_widget().pack_forget() 
-				self.tool_bar.pack_forget()
-	
-				# the figure that will contain the plot
-				self.fig = Figure(figsize = (5, 5), dpi = 100)
-				
-				# adding the subplot
-				self.plot1 = self.fig.add_subplot(111)		
-				
-				# creating the Tkinter canvas
-				# containing the Matplotlib figure
-				self.canvas = FigureCanvasTkAgg(self.fig, master = self.window)  
-				self.canvas.draw()
-				
-				# placing the canvas on the Tkinter window
-				self.canvas.get_tk_widget().pack(fill=BOTH, expand=True)
-				
-				# creating the Matplotlib toolbar
-				self.tool_bar = NavigationToolbar2Tk(self.canvas, self.window, pack_toolbar=False)
-				self.tool_bar.update()
-				self.tool_bar.pack(side=TOP, fill=X)
+				refresh_plot()
 
 			except Exception as e:
 				err_win(e)
@@ -132,28 +119,7 @@ class MainWindow:
 					self.eps = float(self.eps_entry_one.get())
 					self.min = int(self.min_entry_one.get())
 	
-					self.canvas.get_tk_widget().pack_forget() 
-					self.tool_bar.pack_forget()		
-	
-					# the figure that will contain the plot
-					self.fig = Figure(figsize = (5, 5), dpi = 100)
-		
-					# adding the subplot
-					self.plot1 = self.fig.add_subplot(111)
-		
-					# creating the Tkinter canvas
-					# containing the Matplotlib figure
-					self.canvas = FigureCanvasTkAgg(self.fig, master = self.window)
-					self.canvas.draw()
-					self.canvas.get_tk_widget().pack(fill=BOTH, expand=True)
-		
-					# placing the canvas on the Tkinter window
-					self.canvas.get_tk_widget().pack(fill=BOTH, expand=True)
-		
-					# creating the Matplotlib toolbar
-					self.tool_bar = NavigationToolbar2Tk(self.canvas, self.window, pack_toolbar=False)
-					self.tool_bar.update()
-					self.tool_bar.pack(side=BOTTOM, fill=X)
+					refresh_plot()
 				
 					for points in self.points_list:
 						self.plot1.plot(points[:, 0], points[:, 1], 'b.')
@@ -188,28 +154,7 @@ class MainWindow:
 					err_win("Fill required fields")
 
 				else:
-					self.canvas.get_tk_widget().pack_forget() 
-					self.tool_bar.pack_forget()	
-
-					# the figure that will contain the plot
-					self.fig = Figure(figsize = (5, 5), dpi = 100)
-
-					# adding the subplot
-					self.plot1 = self.fig.add_subplot(111)
-
-					# creating the Tkinter canvas
-					# containing the Matplotlib figure
-					self.canvas = FigureCanvasTkAgg(self.fig, master = self.window)
-					self.canvas.draw()
-					self.canvas.get_tk_widget().pack(fill=BOTH, expand=True)
-
-					# placing the canvas on the Tkinter window
-					self.canvas.get_tk_widget().pack(fill=BOTH, expand=True)
-
-					# creating the Matplotlib toolbar
-					self.tool_bar = NavigationToolbar2Tk(self.canvas, self.window, pack_toolbar=False)
-					self.tool_bar.update()
-					self.tool_bar.pack(side=BOTTOM, fill=X)
+					refresh_plot()
 
 					for cluster in self.clusters:
 							# Plotting our original towers

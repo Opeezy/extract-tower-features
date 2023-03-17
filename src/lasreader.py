@@ -98,5 +98,5 @@ class Read:
 		self.table = pd.DataFrame(d)
 
 if __name__ == "__main__":
-	Read(<FILE PATH>)
+	Read("<FILE PATH>")
 
