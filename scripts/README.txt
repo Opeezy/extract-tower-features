@@ -1,0 +1,1 @@
+Basically a code junkyard. Just using this as a place to copy and paste old code I've used.
