@@ -98,5 +98,5 @@ class Read:
 		self.table = pd.DataFrame(d)
 
 if __name__ == "__main__":
-	Read("C:\\Users\\christopher.openshaw\\Documents\\GitHub\\data\\towers_sample_1.las")
+	Read(<FILE PATH>)
 
