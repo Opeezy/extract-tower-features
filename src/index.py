@@ -150,12 +150,15 @@ class MainWindow:
 
 		def draw_tops():
 			try:
+				# Making sure our entries are filled
 				if self.eps_entry_two.get() == "" or self.min_entry_two.get() == "":
 					err_win("Fill required fields")
 
 				else:
+					# Clear the plot
 					refresh_plot()
 
+					# Looping through our clusters
 					for cluster in self.clusters:
 							# Plotting our original towers
 							self.plot1.plot(cluster[:, 0], cluster[:, 1], 'b.')
@@ -170,37 +173,24 @@ class MainWindow:
 							points_in_window = cluster[cluster[:, 2] > window]
 							self.points_in_window.append(points_in_window)
 
+							# List for groups of points that are close to each other
 							groups = []
-							centroids_raised = []
 
 							# Finding distances of each point compared to each other
 							dist = cdist(points_in_window, points_in_window)
-							for d in dist:
+							for d in dist:								
+								# For singular group
 								group = []
 								for k, v in enumerate(d):
+									# Grouping points in that are less than 3 (units?) away. Might make this an adjustable setting
 									if v < 3:
 										group.append(k)
 								groups.append(group)
 
-							tops = list(set(map(tuple, groups)))
-							print(f"TOPS:: {tops}\nn")
+							print(groups)
+							sys.exit()
 							
-							for t in tops:
-								points = [points_in_window[index] for index in t]
-								points = np.vstack(points)
-
-								self.plot1.plot(points[:, 0], points[:, 1], 'r.')
-
-								top_of_pole = max(points[:, 2])
-								poly = list(map(tuple, points))
-								if len(poly) >=4:									
-									poly = Polygon(poly)
-									center = poly.centroid
-									top_point = [center.x, center.y, top_of_pole]									
-	
-									self.plot1.plot(top_point[0], top_point[1], 'Xy')
-								else:
-									pass
+									
 								
 										
 
