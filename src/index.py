@@ -83,6 +83,23 @@ class MainWindow:
 			except Exception as e:
 				err_win(e)
 
+		def save_tops():
+			try:
+				if len(self.tops) == 0:
+					err_win("No points found")
+				else:
+					#path = fd.askdirectory()
+					file = fd.asksaveasfilename(defaultextension=".txt")
+					with open(f"{file}", "w") as f:
+						for t in self.tops:
+							line = f"{t[0]},{t[1]},{t[2]}\n"
+							f.write(line)
+					print("Successfully written to file")
+
+			except Exception as e:
+				print(traceback.format_exc())
+				err_win(e)
+
 		def load_points():
 			try:
 				self.files = fd.askopenfilenames()
@@ -149,84 +166,63 @@ class MainWindow:
 				err_win(e)
 
 		def draw_tops():
-			try:
-				# Making sure our entries are filled
-				if self.eps_entry_two.get() == "" or self.min_entry_two.get() == "":
-					err_win("Fill required fields")
+			try:			
+				# Clear the plot
+				refresh_plot()
 
-				else:
-					# Clear the plot
-					refresh_plot()
+				# Convert self.tops back to list
+				self.tops = []
 
-					# Looping through our clusters
-					for cluster in self.clusters:
-							# Plotting our original towers
-							self.plot1.plot(cluster[:, 0], cluster[:, 1], 'b.')
-	
-							# Defining highest point in cluster and tolerance
-							z_values = cluster[:, 2]
-							max_z = max(z_values)							
-							self.tolerance = int(self.tolerance_entry.get())
-	
-							# Defining height window to find points within
-							window = max_z - self.tolerance
-							points_in_window = cluster[cluster[:, 2] > window]
-							self.points_in_window.append(points_in_window)
+				# Looping through our clusters
+				for cluster in self.clusters:
+					# Plotting our original towers
+					self.plot1.plot(cluster[:, 0], cluster[:, 1], 'b.')
+					# Defining highest point in cluster and tolerance
+					z_values = cluster[:, 2]
+					max_z = max(z_values)							
+					self.tolerance = float(self.tolerance_entry.get())
+					
+					# Defining height window to find points within
+					window = max_z - self.tolerance
+					points_in_window = cluster[cluster[:, 2] > window]
+					self.points_in_window.append(points_in_window)
 
-							# List for groups of points that are close to each other
-							groups = []
+					# List for groups of points that are close to each other
+					groups = []
 
-							# Finding distances of each point compared to each other
-							dist = cdist(points_in_window, points_in_window)
-							for d in dist:								
-								# For singular group
-								group = []
-								for k, v in enumerate(d):
-									# Grouping points in that are less than 3 (units?) away. Might make this an adjustable setting
-									if v < 3:
-										group.append(k)
-								groups.append(group)
+					# Finding distances of each point compared to each other
+					dist = cdist(points_in_window, points_in_window)
+					for d in dist:								
+						# For singular group
+						group = []
+						for k, v in enumerate(d):
+							# Grouping points in that are less than 3 (units?) away. Might make this an adjustable setting
+							if v <= 5:
+								group.append(k)
 
-							print(groups)
-							sys.exit()
+						groups.append(group)
+
+					# Removing duplicates leaving the groups of indexes
+					groups = list(set(map(tuple, groups)))
+
+					# Looping throught each group
+					for g in groups:
+						# Creating the group as a np array so we can easily grab the highest point
+						points_as_array = np.vstack([points_in_window[i] for i in g])
+						highest = max(points_as_array[:, 2])
+						if len(g) >= 4:									
+							# Creating a Shapely Polygon object witht the indexes
+							poly = Polygon([tuple(points_in_window[i]) for i in g])
 							
-									
-								
-										
+							# Finding the centroid of the polygon and creating the top from it
+							centroid = poly.centroid
+							top = np.array([centroid.x, centroid.y, highest])
+							self.tops.append(top)
 
-							
-
-							## Run dbscan again to find individual tops
-							#eps_two = float(self.eps_entry_two.get())
-							#min_two = int(self.min_entry_two.get())
-							#print(f"DBSCAN WITH EPS:: {eps_two} AND MIN:: {min_two}")
-							#pcd = o3d.geometry.PointCloud()
-							#pcd.points = o3d.utility.Vector3dVector(points_in_window)
-							#labels = np.array(pcd.cluster_dbscan(eps=eps_two, min_points=min_two))
-	#
-							## Local max_label var assigned to individual clusters within the parent cluster
-							#max_label = labels.max()
-	#
-							#labeled_points = np.empty((len(labels), 4))
-							#labeled_points[:, 0] = labels
-							#labeled_points[:, 1] = points_in_window[:, 0]
-							#labeled_points[:, 2] = points_in_window[:, 1]
-							#labeled_points[:, 3] = points_in_window[:, 2]
-#
-							#self.plot1.plot(points_in_window[:, 0], points_in_window[:, 1], 'y.')	
-	#
-							#for i in range(0, max_label):							
-							#	# defining our tops
-							#	top = labeled_points[labeled_points[:, 0] == i]
-							#	top = np.delete(top, 0, 1)
-							#	self.tops.append(top)
-							#	top = np.delete(top, 2, 1)
-							#	top_hull = ConvexHull(top)
-	#
-							#	self.plot1.plot(top[:, 0], top[:, 1], 'g.')
-			#
-							#	for top_simplex in top_hull.simplices:			
-							#		self.plot1.plot(top[top_simplex, 0], top[top_simplex, 1], 'r-')					
+				# PLotting the points within window and our tops
+				self.plot1.plot(points_in_window[:, 0], points_in_window[:, 1], 'r.')
+				self.tops = np.vstack(self.tops)
+				self.plot1.plot(self.tops[:, 0], self.tops[:, 1], 'yX')	
 
 			except Exception as e:
 				print(traceback.format_exc())
@@ -264,16 +260,12 @@ class MainWindow:
 			try:
 				if self.scan_check_VAR.get() == 1:	
 					self.eps_entry_one.config(state=NORMAL)
-					self.min_entry_one.config(state=NORMAL)
-					self.eps_entry_two.config(state=NORMAL)
-					self.min_entry_two.config(state=NORMAL)
+					self.min_entry_one.config(state=NORMAL)			
 					self.tolerance_entry.config(state=NORMAL)
 	
 				else:	
 					self.eps_entry_one.config(state=DISABLED)
-					self.min_entry_one.config(state=DISABLED)
-					self.eps_entry_two.config(state=DISABLED)
-					self.min_entry_two.config(state=DISABLED)
+					self.min_entry_one.config(state=DISABLED)					
 					self.tolerance_entry.config(state=DISABLED)
 
 			except Exception as e:
@@ -302,7 +294,9 @@ class MainWindow:
 		self.file_menu = Menu(self.menu_bar, tearoff=0)
 		self.points_menu = Menu(self.menu_bar, tearoff=0)
 		self.draw_menu = Menu(self.menu_bar, tearoff=0)
-		
+
+		# Commands for each menu
+		self.file_menu.add_command(label="Save tops", command=save_tops)
 		self.points_menu.add_command(label="Unload points", command=unload_points)
 		self.points_menu.add_command(label="Load Points", command=load_points)
 		self.points_menu.add_command(label="View 3D", command=view_3D)
@@ -335,11 +329,7 @@ class MainWindow:
 
 		# first scan settings frame
 		self.scan_win = Frame(self.window)
-
-		# labels
-		self.scan_label_one = Label(self.scan_win, text='First Scan')
-		self.scan_label_two = Label(self.scan_win, text='Second Scan')
-
+	
 		# check button
 		self.scan_check_VAR = IntVar(0)
 		self.scan_check = Checkbutton(self.scan_win, var=self.scan_check_VAR, command=enable_scan)
@@ -348,45 +338,28 @@ class MainWindow:
 		self.eps_label_one = Label(self.scan_win, text='EPS:')		
 		self.eps_entry_one = Entry(self.scan_win)
 		self.eps_entry_one.insert(0, '10')
-		self.eps_entry_one.config(state=DISABLED)
-		self.eps_label_two = Label(self.scan_win, text='EPS:')		
-		self.eps_entry_two = Entry(self.scan_win)
-		self.eps_entry_two.insert(0, '1')
-		self.eps_entry_two.config(state=DISABLED)				
+		self.eps_entry_one.config(state=DISABLED)	
 
 		# min setting
 		self.min_label_one = Label(self.scan_win, text='MIN:')	
 		self.min_entry_one = Entry(self.scan_win)
 		self.min_entry_one.insert(0, '15')	
-		self.min_entry_one.config(state=DISABLED)
-		self.min_label_two = Label(self.scan_win, text='MIN:')	
-		self.min_entry_two = Entry(self.scan_win)
-		self.min_entry_two.insert(0, '4')	
-		self.min_entry_two.config(state=DISABLED)
+		self.min_entry_one.config(state=DISABLED)		
 
 		# tolerance setting	
 		self.tolerance_label = Label(self.scan_win, text='Tolerance:')	
 		self.tolerance_entry = Entry(self.scan_win)
 		self.tolerance_entry.insert(0, '5')	
-		self.tolerance_entry.config(state=DISABLED)
+		self.tolerance_entry.config(state=DISABLED)		
 
-		self.div = ttk.Separator(self.scan_win, orient='vertical')
-
-		self.scan_win.pack(expand=False, side=BOTTOM, padx=2, pady=2)
-		self.scan_label_one.grid(column=0, row=0, padx=2, pady=2, sticky=E, columnspan=4)
-		self.scan_check.grid(column=0, row=1, padx=2, pady=2, sticky=W)
-		self.eps_label_one.grid(column=1, row=1, padx=2, pady=2, sticky=W)
-		self.eps_entry_one.grid(column=2, row=1, padx=2, pady=2, sticky=W)
-		self.min_label_one.grid(column=3, row=1, padx=2, pady=2, sticky=W)
-		self.min_entry_one.grid(column=4, row=1, padx=2, pady=2, sticky=W)
-		self.tolerance_label.grid(column=5, row=1, padx=2, pady=2, sticky=W)
-		self.tolerance_entry.grid(column=6, row=1, padx=2, pady=2, sticky=W)
-		self.div.grid(column=7, row=1, padx=2, pady=2, sticky=NS)
-		self.scan_label_two.grid(column=1, row=0, padx=2, pady=2, sticky=E, columnspan=10)
-		self.eps_label_two.grid(column=8, row=1, padx=2, pady=2, sticky=NS)
-		self.eps_entry_two.grid(column=9, row=1, padx=2, pady=2, sticky=NS)
-		self.min_label_two.grid(column=10, row=1, padx=2, pady=2, sticky=NS)
-		self.min_entry_two.grid(column=11, row=1, padx=2, pady=2, sticky=NS)
+		self.scan_win.pack(expand=False, side=BOTTOM, padx=2, pady=2)	
+		self.scan_check.grid(column=0, row=0, padx=2, pady=2, sticky=W)
+		self.eps_label_one.grid(column=1, row=0, padx=2, pady=2, sticky=W)
+		self.eps_entry_one.grid(column=2, row=0, padx=2, pady=2, sticky=W)
+		self.min_label_one.grid(column=3, row=0, padx=2, pady=2, sticky=W)
+		self.min_entry_one.grid(column=4, row=0, padx=2, pady=2, sticky=W)
+		self.tolerance_label.grid(column=5, row=0, padx=2, pady=2, sticky=W)
+		self.tolerance_entry.grid(column=6, row=0, padx=2, pady=2, sticky=W)	
 
 if __name__ == '__main__':
 	app = MainWindow().window	
